@@ -1,6 +1,7 @@
 import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Properties;
+import java.util.concurrent.CountDownLatch;
 
 import org.apache.spark.launcher.SparkAppHandle;
 import org.apache.spark.launcher.SparkAppHandle.Listener;
@@ -25,6 +26,7 @@ public class Launcher {
 	  String appName = properties.getProperty("appName");
 	  String logFilePath = properties.getProperty("logFilePath");
 	  
+	  CountDownLatch latch = new CountDownLatch(1);
 	  SparkAppHandle handle = new SparkLauncher()
 	  .setSparkHome(sparkHome)
 	  .setAppResource(appResource)
@@ -34,31 +36,25 @@ public class Launcher {
       .setAppName(appName)
       .setVerbose(true)
       .addAppArgs(logFilePath)
-//      .redirectToLog("testlog")
       .startApplication(new Listener() {
 
 		@Override
 		public void infoChanged(SparkAppHandle arg0) {
-			// TODO Auto-generated method stub
 			System.out.println(arg0.toString());
 		}
 
 		@Override
 		public void stateChanged(SparkAppHandle arg0) {
-			// TODO Auto-generated method stub
 			System.out.println(arg0.getState().name());
+			
+			if(arg0.getState().isFinal()) {
+				latch.countDown();
+			}
 		}
     	  
       });
-	  System.out.println(handle.getState().name());
-	  while(handle.getState() == SparkAppHandle.State.UNKNOWN 
-			  ||  handle.getState() == SparkAppHandle.State.RUNNING) {
-		  System.out.println(handle.getState().name());
-		  System.out.println(handle.getAppId());
-		  Thread.sleep(5000); 
-	  }
-	  // Use handle API to monitor / control application.
-	  System.out.println(handle.getState().name());
-	  System.out.println(handle.getAppId());
+	  latch.await();
+	  System.out.println("Application: " + handle.getAppId()
+			  + " finished with status: " + handle.getState().name());
  }
 }
