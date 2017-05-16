@@ -1,11 +1,16 @@
+package xn.sparktest.simpleapp;
+
 import org.apache.spark.api.java.*;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.function.Function;
 
 public class SimpleApp {
   public static void main(String[] args) {
-    String logFile = "file:///home/asd/Programming/Apps/spark-2.1.1-bin-hadoop2.7/README.md"; // Should be some file on your system
-    SparkConf conf = new SparkConf().setAppName("Simple Application");
+	  if(args == null || args.length == 0) {
+		  throw new IllegalArgumentException("Missing log file argument!");
+	  }
+    String logFile = args[0]; // Should be some file on your system
+    SparkConf conf = new SparkConf();
     JavaSparkContext sc = new JavaSparkContext(conf);
     JavaRDD<String> logData = sc.textFile(logFile).cache();
 
